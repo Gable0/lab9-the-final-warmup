@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { TodoModel } from '../src/models/todo-model.js';
+import { TodoModel } from '../../src/models/todo-model.js';
 
 /**
  * Mock storage service for testing
@@ -50,4 +50,3 @@ test('TodoModel - should not add empty todos', () => {
 
 /* so few tests! I guess you can say you have testing, but it isn't meaningful.
    Also where are our end to end tests!?! */
-
