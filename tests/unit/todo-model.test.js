@@ -48,7 +48,7 @@ test('TodoModel - should not add empty todos', () => {
   assert.strictEqual(model.todos.length, 0);
 });
 
-test('TodoModel - toggleComplete flips completed flag', () => {
+test('TodoModel - toggleComplete tracks lifetime completions', () => {
   const storage = new MockStorage();
   const model = new TodoModel(storage);
   model.addTodo('Walk the dog');
@@ -57,9 +57,15 @@ test('TodoModel - toggleComplete flips completed flag', () => {
   model.toggleComplete(todoId);
 
   assert.strictEqual(model.todos[0].completed, true);
+  assert.strictEqual(model.completedCount, 1);
 
   model.toggleComplete(todoId);
   assert.strictEqual(model.todos[0].completed, false);
+  assert.strictEqual(model.completedCount, 1);
+
+  model.toggleComplete(todoId);
+  assert.strictEqual(model.todos[0].completed, true);
+  assert.strictEqual(model.completedCount, 1);
 });
 
 test('TodoModel - subscribe returns unsubscribe callback', () => {
@@ -87,11 +93,29 @@ test('TodoModel - clearAll resets todos and id counter', () => {
   model.addTodo('Two');
   assert.strictEqual(model.todos.length, 2);
 
+  model.toggleComplete(model.todos[0].id);
+  assert.strictEqual(model.completedCount, 1);
+
   model.clearAll();
   assert.strictEqual(model.todos.length, 0);
+  assert.strictEqual(model.completedCount, 0);
 
   model.addTodo('Three');
   assert.strictEqual(model.todos[0].id, 1);
+});
+
+test('TodoModel - completed count persists after deleting completed todo', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+
+  model.addTodo('Write docs');
+  const id = model.todos[0].id;
+
+  model.toggleComplete(id);
+  assert.strictEqual(model.completedCount, 1);
+
+  model.deleteTodo(id);
+  assert.strictEqual(model.completedCount, 1);
 });
 
 /* so few tests! I guess you can say you have testing, but it isn't meaningful.

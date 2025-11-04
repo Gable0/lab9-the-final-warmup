@@ -24,11 +24,11 @@ export class TodoItem extends LitElement {
       background: white;
       border-radius: 8px;
       margin-bottom: 8px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      min-height: var(--todo-item-row-height, 68px);
+      transition: box-shadow 0.2s ease;
     }
 
     .todo-item:hover {
-      transform: translateX(4px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 

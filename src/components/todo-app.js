@@ -25,6 +25,9 @@ export class TodoApp extends LitElement {
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       padding: 32px;
       min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .header {
@@ -54,18 +57,47 @@ export class TodoApp extends LitElement {
 
     .stats {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px;
-      background: #f5f5f5;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      justify-content: center;
+      align-items: stretch;
+      gap: 24px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+
+    .tasks-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1 1 auto;
+    }
+
+    .tasks-list-box {
+      flex: 1 1 auto;
+      border: 1px solid #e0e6ff;
+      border-radius: 12px;
+      background: #f9f9ff;
+      padding: 12px 0 12px 12px;
+      display: flex;
+      min-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
+      max-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
+      overflow: hidden;
+    }
+
+    .tasks-list-box todo-list {
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .stat-item {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      min-width: 140px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: #f5f5f5;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
     .stat-value {
@@ -103,7 +135,7 @@ export class TodoApp extends LitElement {
     }
 
     .footer {
-      margin-top: 20px;
+      margin-top: auto;
       padding-top: 20px;
       border-top: 1px solid #e0e0e0;
       text-align: center;
@@ -122,6 +154,8 @@ export class TodoApp extends LitElement {
       : () => true;
     this.autoClearTimers = new Map();
     this.pendingDeletionIds = new Set();
+    this.appContainer = null;
+    this.baseContainerHeight = 0;
 
     // Subscribe to model changes
     this.unsubscribe = this.model.subscribe(() => {
@@ -135,6 +169,24 @@ export class TodoApp extends LitElement {
     }
     this.cancelAllAutoClear();
     super.disconnectedCallback();
+  }
+
+  firstUpdated() {
+    this.appContainer = this.renderRoot.querySelector('.app-container');
+    if (!this.appContainer) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      if (!this.appContainer) {
+        return;
+      }
+      this.baseContainerHeight = this.appContainer.offsetHeight;
+      const heightValue = `${this.baseContainerHeight}px`;
+      this.appContainer.style.minHeight = heightValue;
+      this.appContainer.style.maxHeight = heightValue;
+      this.appContainer.style.height = heightValue;
+    });
   }
 
   requestConfirmation(message) {
@@ -195,7 +247,10 @@ export class TodoApp extends LitElement {
   }
 
   handleClearAll() {
-    if (this.todos.length === 0) {
+    const hasTodos = this.todos.length > 0;
+    const hasCompleted = this.model.completedCount > 0;
+
+    if (!hasTodos && !hasCompleted) {
       return;
     }
 
@@ -206,7 +261,6 @@ export class TodoApp extends LitElement {
   }
 
   render() {
-    const totalTodos = this.todos.length;
     const activeTodos = this.model.activeCount;
     const completedTodos = this.model.completedCount;
 
@@ -214,25 +268,21 @@ export class TodoApp extends LitElement {
       <div class="app-container">
         <div class="header">
           <div class="heading-group">
-            <h1>My Tasks</h1>
+            <h1>My Tasks:</h1>
             <p class="subtitle">Stay organized and productive</p>
           </div>
           <button
             class="clear-all"
             @click=${this.handleClearAll}
-            ?disabled=${totalTodos === 0}>
-            Clear All
+            ?disabled=${this.todos.length === 0 && completedTodos === 0}>
+            Clear All Values
           </button>
         </div>
 
         <div class="stats">
           <div class="stat-item">
-            <div class="stat-value">${totalTodos}</div>
-            <div class="stat-label">Total</div>
-          </div>
-          <div class="stat-item">
             <div class="stat-value">${activeTodos}</div>
-            <div class="stat-label">Active</div>
+            <div class="stat-label">To&nbsp;Do</div>
           </div>
           <div class="stat-item">
             <div class="stat-value">${completedTodos}</div>
@@ -240,20 +290,24 @@ export class TodoApp extends LitElement {
           </div>
         </div>
 
-        <todo-form
-          @add-todo=${this.handleAddTodo}>
-        </todo-form>
+        <div class="tasks-panel">
+          <todo-form
+            @add-todo=${this.handleAddTodo}>
+          </todo-form>
 
-        <todo-list
-          .todos=${this.todos}
-          .pendingDeletionIds=${this.pendingDeletionIds}
-          @toggle-todo=${this.handleToggleTodo}
-          @delete-todo=${this.handleDeleteTodo}
-          @update-todo=${this.handleUpdateTodo}>
-        </todo-list>
+          <div class="tasks-list-box">
+            <todo-list
+              .todos=${this.todos}
+              .pendingDeletionIds=${this.pendingDeletionIds}
+              @toggle-todo=${this.handleToggleTodo}
+              @delete-todo=${this.handleDeleteTodo}
+              @update-todo=${this.handleUpdateTodo}>
+            </todo-list>
+          </div>
+        </div>
 
         <div class="footer">
-          Lab 9: The final battle!
+        Lab 9: The Final Battle!
         </div>
       </div>
     `;
@@ -269,7 +323,7 @@ export class TodoApp extends LitElement {
       }
       this.autoClearTimers.delete(id);
       this.unmarkPendingDeletion(id);
-    }, 1000);
+    }, 500);
 
     this.autoClearTimers.set(id, timerId);
   }

@@ -6,12 +6,19 @@ export class TodoModel {
   #listeners;
   #nextId;
   #storage;
+  #completedTotal;
 
   constructor(storageService) {
     this.#storage = storageService;
     const storedTodos = this.#storage.load('items', []);
-    this.todos = Array.isArray(storedTodos) ? storedTodos : [];
+    this.todos = Array.isArray(storedTodos)
+      ? storedTodos.map(todo => ({
+        ...todo,
+        wasCounted: todo.wasCounted ?? false
+      }))
+      : [];
     this.#nextId = Number.parseInt(this.#storage.load('nextId', 1), 10) || 1;
+    this.#completedTotal = Number.parseInt(this.#storage.load('completedTotal', 0), 10) || 0;
     this.#listeners = new Set();
   }
 
@@ -46,7 +53,8 @@ export class TodoModel {
       id: this.#nextId,
       text: trimmed,
       completed: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      wasCounted: false
     };
 
     this.#nextId += 1;
@@ -59,17 +67,32 @@ export class TodoModel {
    */
   toggleComplete(id) {
     let updated = false;
+    let nextCompletedTotal = this.#completedTotal;
+
     this.todos = this.todos.map(todo => {
       if (todo.id !== id) {
         return todo;
       }
 
       updated = true;
-      return {
+      const toggled = {
         ...todo,
         completed: !todo.completed
       };
+
+      if (!todo.completed && toggled.completed && !todo.wasCounted) {
+        nextCompletedTotal += 1;
+        toggled.wasCounted = true;
+      } else if (!toggled.completed) {
+        toggled.wasCounted = todo.wasCounted;
+      }
+
+      return toggled;
     });
+
+    if (updated) {
+      this.#completedTotal = nextCompletedTotal;
+    }
 
     return this.#commit(updated);
   }
@@ -81,6 +104,7 @@ export class TodoModel {
     const nextTodos = this.todos.filter(todo => todo.id !== id);
     const didChange = nextTodos.length !== this.todos.length;
     this.todos = didChange ? nextTodos : this.todos;
+    // completed total remains unchanged; reflects lifetime completions
     return this.#commit(didChange);
   }
 
@@ -130,6 +154,7 @@ export class TodoModel {
 
     this.todos = [];
     this.#nextId = 1;
+    this.#completedTotal = 0;
     return this.#commit(true);
   }
 
@@ -144,7 +169,7 @@ export class TodoModel {
    * Get count of completed todos.
    */
   get completedCount() {
-    return this.todos.length - this.activeCount;
+    return this.#completedTotal;
   }
 
   #commit(didChange) {
@@ -160,5 +185,6 @@ export class TodoModel {
   #persist() {
     this.#storage.save('items', this.todos);
     this.#storage.save('nextId', this.#nextId);
+    this.#storage.save('completedTotal', this.#completedTotal);
   }
 }
