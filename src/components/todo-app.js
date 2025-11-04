@@ -10,7 +10,8 @@ import './todo-list.js';
  */
 export class TodoApp extends LitElement {
   static properties = {
-    todos: { state: true }
+    todos: { state: true },
+    pendingDeletionIds: { state: true }
   };
 
   static styles = css`
@@ -26,8 +27,20 @@ export class TodoApp extends LitElement {
       min-height: 400px;
     }
 
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .heading-group {
+      flex: 1;
+    }
+
     h1 {
-      margin: 0 0 8px 0;
+      margin: 0 0 8px;
       color: #333;
       font-size: 32px;
       font-weight: 700;
@@ -35,7 +48,7 @@ export class TodoApp extends LitElement {
 
     .subtitle {
       color: #666;
-      margin-bottom: 24px;
+      margin: 0;
       font-size: 14px;
     }
 
@@ -68,14 +81,7 @@ export class TodoApp extends LitElement {
       letter-spacing: 0.5px;
     }
 
-    .actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 20px;
-    }
-
-    button {
-      flex: 1;
+    .clear-all {
       padding: 10px 16px;
       border: none;
       border-radius: 8px;
@@ -83,18 +89,6 @@ export class TodoApp extends LitElement {
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-    }
-
-    .clear-completed {
-      background: #ff9800;
-      color: white;
-    }
-
-    .clear-completed:hover {
-      background: #f57c00;
-    }
-
-    .clear-all {
       background: #f44336;
       color: white;
     }
@@ -103,7 +97,7 @@ export class TodoApp extends LitElement {
       background: #da190b;
     }
 
-    button:disabled {
+    .clear-all:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
@@ -126,6 +120,8 @@ export class TodoApp extends LitElement {
     this.confirmHandler = typeof window !== 'undefined' && typeof window.confirm === 'function'
       ? window.confirm.bind(window)
       : () => true;
+    this.autoClearTimers = new Map();
+    this.pendingDeletionIds = new Set();
 
     // Subscribe to model changes
     this.unsubscribe = this.model.subscribe(() => {
@@ -137,6 +133,7 @@ export class TodoApp extends LitElement {
     if (this.unsubscribe) {
       this.unsubscribe();
     }
+    this.cancelAllAutoClear();
     super.disconnectedCallback();
   }
 
@@ -158,8 +155,20 @@ export class TodoApp extends LitElement {
 
   handleToggleTodo(e) {
     const id = e?.detail?.id;
-    if (typeof id === 'number') {
-      this.model.toggleComplete(id);
+    if (typeof id !== 'number') {
+      return;
+    }
+
+    const didToggle = this.model.toggleComplete(id);
+    if (!didToggle) {
+      return;
+    }
+
+    const todo = this.model.todos.find(item => item.id === id);
+    if (todo?.completed) {
+      this.scheduleAutoClear(id);
+    } else {
+      this.cancelAutoClear(id);
     }
   }
 
@@ -173,6 +182,7 @@ export class TodoApp extends LitElement {
     const message = todo ? `Delete "${todo.text}"?` : 'Delete this todo?';
 
     if (this.requestConfirmation(message)) {
+      this.cancelAutoClear(id);
       this.model.deleteTodo(id);
     }
   }
@@ -184,22 +194,13 @@ export class TodoApp extends LitElement {
     }
   }
 
-  handleClearCompleted() {
-    if (this.model.completedCount === 0) {
-      return;
-    }
-
-    if (this.requestConfirmation('Clear all completed todos?')) {
-      this.model.clearCompleted();
-    }
-  }
-
   handleClearAll() {
     if (this.todos.length === 0) {
       return;
     }
 
     if (this.requestConfirmation('Clear ALL todos? This cannot be undone.')) {
+      this.cancelAllAutoClear();
       this.model.clearAll();
     }
   }
@@ -211,8 +212,18 @@ export class TodoApp extends LitElement {
 
     return html`
       <div class="app-container">
-        <h1>My Tasks</h1>
-        <p class="subtitle">Stay organized and productive</p>
+        <div class="header">
+          <div class="heading-group">
+            <h1>My Tasks</h1>
+            <p class="subtitle">Stay organized and productive</p>
+          </div>
+          <button
+            class="clear-all"
+            @click=${this.handleClearAll}
+            ?disabled=${totalTodos === 0}>
+            Clear All
+          </button>
+        </div>
 
         <div class="stats">
           <div class="stat-item">
@@ -235,31 +246,62 @@ export class TodoApp extends LitElement {
 
         <todo-list
           .todos=${this.todos}
+          .pendingDeletionIds=${this.pendingDeletionIds}
           @toggle-todo=${this.handleToggleTodo}
           @delete-todo=${this.handleDeleteTodo}
           @update-todo=${this.handleUpdateTodo}>
         </todo-list>
-
-        <div class="actions">
-          <button
-            class="clear-completed"
-            @click=${this.handleClearCompleted}
-            ?disabled=${completedTodos === 0}>
-            Clear Completed
-          </button>
-          <button
-            class="clear-all"
-            @click=${this.handleClearAll}
-            ?disabled=${totalTodos === 0}>
-            Clear All
-          </button>
-        </div>
 
         <div class="footer">
           Lab 9: The final battle!
         </div>
       </div>
     `;
+  }
+
+  scheduleAutoClear(id) {
+    this.cancelAutoClear(id);
+    this.markPendingDeletion(id);
+    const timerId = setTimeout(() => {
+      const todo = this.model.todos.find(item => item.id === id);
+      if (todo?.completed) {
+        this.model.deleteTodo(id);
+      }
+      this.autoClearTimers.delete(id);
+      this.unmarkPendingDeletion(id);
+    }, 1000);
+
+    this.autoClearTimers.set(id, timerId);
+  }
+
+  cancelAutoClear(id) {
+    const timerId = this.autoClearTimers.get(id);
+    if (timerId) {
+      clearTimeout(timerId);
+      this.autoClearTimers.delete(id);
+    }
+    this.unmarkPendingDeletion(id);
+  }
+
+  cancelAllAutoClear() {
+    this.autoClearTimers.forEach(timerId => clearTimeout(timerId));
+    this.autoClearTimers.clear();
+    this.pendingDeletionIds = new Set();
+  }
+
+  markPendingDeletion(id) {
+    const next = new Set(this.pendingDeletionIds);
+    next.add(id);
+    this.pendingDeletionIds = next;
+  }
+
+  unmarkPendingDeletion(id) {
+    if (!this.pendingDeletionIds.has(id)) {
+      return;
+    }
+    const next = new Set(this.pendingDeletionIds);
+    next.delete(id);
+    this.pendingDeletionIds = next;
   }
 }
 

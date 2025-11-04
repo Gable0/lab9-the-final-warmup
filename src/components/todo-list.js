@@ -7,7 +7,8 @@ import './todo-item.js';
  */
 export class TodoList extends LitElement {
   static properties = {
-    todos: { type: Array }
+    todos: { type: Array },
+    pendingDeletionIds: { type: Object }
   };
 
   static styles = css`
@@ -55,6 +56,7 @@ export class TodoList extends LitElement {
   constructor() {
     super();
     this.todos = [];
+    this.pendingDeletionIds = new Set();
   }
 
   render() {
@@ -72,7 +74,11 @@ export class TodoList extends LitElement {
         ${repeat(
           this.todos,
           todo => todo.id,
-          todo => html`<todo-item role="listitem" .todo=${todo}></todo-item>`
+          todo => html`<todo-item
+            role="listitem"
+            .todo=${todo}
+            .pendingDeletion=${this.pendingDeletionIds?.has?.(todo.id) ?? false}>
+          </todo-item>`
         )}
       </div>
     `;

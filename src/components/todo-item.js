@@ -7,7 +7,8 @@ export class TodoItem extends LitElement {
   static properties = {
     todo: { type: Object },
     isEditing: { state: true },
-    editValue: { state: true }
+    editValue: { state: true },
+    pendingDeletion: { type: Boolean, attribute: 'pending-deletion' }
   };
 
   static styles = css`
@@ -38,7 +39,6 @@ export class TodoItem extends LitElement {
     }
 
     .todo-text {
-      flex: 1;
       font-size: 16px;
       color: #333;
       word-break: break-word;
@@ -47,6 +47,49 @@ export class TodoItem extends LitElement {
     .todo-text.completed {
       text-decoration: line-through;
       color: #999;
+    }
+
+    .todo-text-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pending-indicator {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .pending-indicator .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.4;
+      animation: ripple 1s infinite ease-in-out;
+    }
+
+    .pending-indicator .dot:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .pending-indicator .dot:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes ripple {
+      0%, 100% {
+        transform: scale(0.5);
+        opacity: 0.2;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+      }
     }
 
     .edit-input {
@@ -113,6 +156,7 @@ export class TodoItem extends LitElement {
     super();
     this.isEditing = false;
     this.editValue = '';
+    this.pendingDeletion = false;
   }
 
   handleToggle() {
@@ -193,9 +237,19 @@ export class TodoItem extends LitElement {
           @change=${this.handleToggle}
           aria-label="Toggle todo"
         />
-        <span class="todo-text ${this.todo.completed ? 'completed' : ''}">
-          ${this.todo.text}
-        </span>
+        <div class="todo-text-wrapper">
+          <span class="todo-text ${this.todo.completed ? 'completed' : ''}">
+            ${this.todo.text}
+          </span>
+          ${this.pendingDeletion ? html`
+            <span class="pending-indicator" aria-live="polite">
+              Deleting
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          ` : null}
+        </div>
         <div class="button-group">
           <button
             class="edit-btn"
