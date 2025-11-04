@@ -124,13 +124,11 @@ export class TodoItem extends LitElement {
   }
 
   handleDelete() {
-    if (confirm('Delete this todo?')) {
-      this.dispatchEvent(new CustomEvent('delete-todo', {
-        detail: { id: this.todo.id },
-        bubbles: true,
-        composed: true
-      }));
-    }
+    this.dispatchEvent(new CustomEvent('delete-todo', {
+      detail: { id: this.todo.id },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   handleEdit() {
@@ -154,6 +152,10 @@ export class TodoItem extends LitElement {
     this.editValue = '';
   }
 
+  handleEditInput(event) {
+    this.editValue = event.target.value;
+  }
+
   handleKeyDown(e) {
     if (e.key === 'Enter') {
       this.handleSave();
@@ -170,7 +172,7 @@ export class TodoItem extends LitElement {
             class="edit-input"
             type="text"
             .value=${this.editValue}
-            @input=${(e) => this.editValue = e.target.value}
+            @input=${this.handleEditInput}
             @keydown=${this.handleKeyDown}
             autofocus
           />

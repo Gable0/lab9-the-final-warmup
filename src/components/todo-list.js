@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import './todo-item.js';
 
 /**
@@ -59,7 +60,7 @@ export class TodoList extends LitElement {
   render() {
     if (this.todos.length === 0) {
       return html`
-        <div class="empty-state">
+        <div class="empty-state" aria-live="polite">
           <div class="empty-icon">📝</div>
           <p>No todos yet. Add one above!</p>
         </div>
@@ -67,10 +68,12 @@ export class TodoList extends LitElement {
     }
 
     return html`
-      <div class="list-container">
-        ${this.todos.map(todo => html`
-          <todo-item .todo=${todo}></todo-item>
-        `)}
+      <div class="list-container" role="list">
+        ${repeat(
+          this.todos,
+          todo => todo.id,
+          todo => html`<todo-item role="listitem" .todo=${todo}></todo-item>`
+        )}
       </div>
     `;
   }

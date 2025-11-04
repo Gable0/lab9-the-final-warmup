@@ -123,42 +123,92 @@ export class TodoApp extends LitElement {
     this.storageService = new StorageService();
     this.model = new TodoModel(this.storageService);
     this.todos = this.model.todos;
+    this.confirmHandler = typeof window !== 'undefined' && typeof window.confirm === 'function'
+      ? window.confirm.bind(window)
+      : () => true;
 
     // Subscribe to model changes
-    this.model.subscribe(() => {
+    this.unsubscribe = this.model.subscribe(() => {
       this.todos = [...this.model.todos];
     });
   }
 
+  disconnectedCallback() {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
+    super.disconnectedCallback();
+  }
+
+  requestConfirmation(message) {
+    try {
+      return this.confirmHandler(message);
+    } catch (error) {
+      console.error('Confirmation prompt failed:', error);
+      return false;
+    }
+  }
+
   handleAddTodo(e) {
-    this.model.addTodo(e.detail.text);
+    const text = e?.detail?.text;
+    if (text) {
+      this.model.addTodo(text);
+    }
   }
 
   handleToggleTodo(e) {
-    this.model.toggleComplete(e.detail.id);
+    const id = e?.detail?.id;
+    if (typeof id === 'number') {
+      this.model.toggleComplete(id);
+    }
   }
 
   handleDeleteTodo(e) {
-    this.model.deleteTodo(e.detail.id);
+    const id = e?.detail?.id;
+    if (typeof id !== 'number') {
+      return;
+    }
+
+    const todo = this.todos.find(item => item.id === id);
+    const message = todo ? `Delete "${todo.text}"?` : 'Delete this todo?';
+
+    if (this.requestConfirmation(message)) {
+      this.model.deleteTodo(id);
+    }
   }
 
   handleUpdateTodo(e) {
-    this.model.updateTodo(e.detail.id, e.detail.text);
+    const { id, text } = e?.detail ?? {};
+    if (typeof id === 'number') {
+      this.model.updateTodo(id, text);
+    }
   }
 
   handleClearCompleted() {
-    if (confirm('Clear all completed todos?')) {
+    if (this.model.completedCount === 0) {
+      return;
+    }
+
+    if (this.requestConfirmation('Clear all completed todos?')) {
       this.model.clearCompleted();
     }
   }
 
   handleClearAll() {
-    if (confirm('Clear ALL todos? This cannot be undone.')) {
+    if (this.todos.length === 0) {
+      return;
+    }
+
+    if (this.requestConfirmation('Clear ALL todos? This cannot be undone.')) {
       this.model.clearAll();
     }
   }
 
   render() {
+    const totalTodos = this.todos.length;
+    const activeTodos = this.model.activeCount;
+    const completedTodos = this.model.completedCount;
+
     return html`
       <div class="app-container">
         <h1>My Tasks</h1>
@@ -166,15 +216,15 @@ export class TodoApp extends LitElement {
 
         <div class="stats">
           <div class="stat-item">
-            <div class="stat-value">${this.todos.length}</div>
+            <div class="stat-value">${totalTodos}</div>
             <div class="stat-label">Total</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${this.model.activeCount}</div>
+            <div class="stat-value">${activeTodos}</div>
             <div class="stat-label">Active</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${this.model.completedCount}</div>
+            <div class="stat-value">${completedTodos}</div>
             <div class="stat-label">Completed</div>
           </div>
         </div>
@@ -194,13 +244,13 @@ export class TodoApp extends LitElement {
           <button
             class="clear-completed"
             @click=${this.handleClearCompleted}
-            ?disabled=${this.model.completedCount === 0}>
+            ?disabled=${completedTodos === 0}>
             Clear Completed
           </button>
           <button
             class="clear-all"
             @click=${this.handleClearAll}
-            ?disabled=${this.todos.length === 0}>
+            ?disabled=${totalTodos === 0}>
             Clear All
           </button>
         </div>

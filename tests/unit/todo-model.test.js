@@ -48,5 +48,51 @@ test('TodoModel - should not add empty todos', () => {
   assert.strictEqual(model.todos.length, 0);
 });
 
+test('TodoModel - toggleComplete flips completed flag', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+  model.addTodo('Walk the dog');
+
+  const todoId = model.todos[0].id;
+  model.toggleComplete(todoId);
+
+  assert.strictEqual(model.todos[0].completed, true);
+
+  model.toggleComplete(todoId);
+  assert.strictEqual(model.todos[0].completed, false);
+});
+
+test('TodoModel - subscribe returns unsubscribe callback', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+  let callCount = 0;
+
+  const unsubscribe = model.subscribe(() => {
+    callCount += 1;
+  });
+
+  model.addTodo('First');
+  assert.strictEqual(callCount, 1);
+
+  unsubscribe();
+  model.addTodo('Second');
+  assert.strictEqual(callCount, 1);
+});
+
+test('TodoModel - clearAll resets todos and id counter', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+
+  model.addTodo('One');
+  model.addTodo('Two');
+  assert.strictEqual(model.todos.length, 2);
+
+  model.clearAll();
+  assert.strictEqual(model.todos.length, 0);
+
+  model.addTodo('Three');
+  assert.strictEqual(model.todos[0].id, 1);
+});
+
 /* so few tests! I guess you can say you have testing, but it isn't meaningful.
    Also where are our end to end tests!?! */

@@ -1,30 +1,41 @@
 /**
- * StorageService - Handles localStorage operations for the TODO app
+ * StorageService - Handles localStorage operations for the TODO app.
+ * Gracefully degrades when localStorage is unavailable (e.g. during tests).
  */
 export class StorageService {
-  constructor(storageKey = 'todos') {
-    this.storageKey = storageKey;
+  #storage;
+  #storageKey;
+
+  constructor(storageKey = 'todos', storage = getBrowserStorage()) {
+    this.#storageKey = storageKey;
+    this.#storage = storage;
   }
 
   /**
-   * Save data to localStorage
+   * Save data to localStorage.
    */
-  save(k, d) {
+  save(key, data) {
+    if (!this.#storage) {
+      return;
+    }
+
     try {
-      const fk = `${this.storageKey}_${k}`;
-      localStorage.setItem(fk, JSON.stringify(d));
+      this.#storage.setItem(this.#buildKey(key), JSON.stringify(data));
     } catch (error) {
       console.error('Failed to save to localStorage:', error);
     }
   }
 
   /**
-   * Load data from localStorage
+   * Load data from localStorage.
    */
   load(key, defaultValue = null) {
+    if (!this.#storage) {
+      return defaultValue;
+    }
+
     try {
-      const fullKey = `${this.storageKey}_${key}`;
-      const item = localStorage.getItem(fullKey);
+      const item = this.#storage.getItem(this.#buildKey(key));
       return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
@@ -33,32 +44,54 @@ export class StorageService {
   }
 
   /**
-   * Remove data from localStorage
+   * Remove data from localStorage.
    */
-  remove(k) {
+  remove(key) {
+    if (!this.#storage) {
+      return;
+    }
+
     try {
-      const fullK = `${this.storageKey}_${k}`;
-      localStorage.removeItem(fullK);
-    } catch (e) {
-      console.error('Failed to remove from localStorage:', e);
+      this.#storage.removeItem(this.#buildKey(key));
+    } catch (error) {
+      console.error('Failed to remove from localStorage:', error);
     }
   }
 
   /**
-   * Clear all data for this app
+   * Clear all data for this app.
    */
   clear() {
+    if (!this.#storage) {
+      return;
+    }
+
     try {
       const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(this.storageKey)) {
+      for (let index = 0; index < this.#storage.length; index += 1) {
+        const key = this.#storage.key(index);
+        if (key && key.startsWith(this.#storageKey)) {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach(key => this.#storage.removeItem(key));
     } catch (error) {
       console.error('Failed to clear localStorage:', error);
     }
   }
+
+  #buildKey(keySuffix) {
+    return `${this.#storageKey}_${keySuffix}`;
+  }
+}
+
+function getBrowserStorage() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch (error) {
+    console.error('Accessing localStorage failed:', error);
+  }
+  return null;
 }
