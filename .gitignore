@@ -7,6 +7,7 @@ build/
 
 # Test & coverage outputs
 coverage/
+test-results/
 
 # Logs
 npm-debug.log*

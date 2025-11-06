@@ -118,5 +118,40 @@ test('TodoModel - completed count persists after deleting completed todo', () =>
   assert.strictEqual(model.completedCount, 1);
 });
 
+test('TodoModel - updateTodo trims text and notifies subscribers', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+  let notifications = 0;
+  const unsubscribe = model.subscribe(() => {
+    notifications += 1;
+  });
+
+  model.addTodo('Review tests');
+  const id = model.todos[0].id;
+  const didUpdate = model.updateTodo(id, '  Updated title  ');
+
+  assert.strictEqual(didUpdate, true);
+  assert.strictEqual(model.todos[0].text, 'Updated title');
+  assert.strictEqual(notifications, 2);
+  unsubscribe();
+});
+
+test('TodoModel - clearCompleted removes only completed todos', () => {
+  const storage = new MockStorage();
+  const model = new TodoModel(storage);
+
+  model.addTodo('Keep me');
+  model.addTodo('Finish docs');
+  const [, docTodo] = model.todos;
+
+  model.toggleComplete(docTodo.id);
+  const didClear = model.clearCompleted();
+
+  assert.strictEqual(didClear, true);
+  assert.strictEqual(model.todos.length, 1);
+  assert.strictEqual(model.todos[0].text, 'Keep me');
+  assert.strictEqual(model.completedCount, 1);
+});
+
 /* so few tests! I guess you can say you have testing, but it isn't meaningful.
    Also where are our end to end tests!?! */

@@ -13,8 +13,16 @@ export class TodoList extends LitElement {
 
   static styles = css`
     :host {
-      display: block;
-      height: 100%;
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      border: 1px solid #e0e6ff;
+      border-radius: 12px;
+      background: #f9f9ff;
+      padding: 12px 0 12px 12px;
+      min-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
+      max-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
+      overflow: hidden;
     }
 
     .empty-state {
@@ -30,8 +38,9 @@ export class TodoList extends LitElement {
     }
 
     .list-container {
+      flex: 1 1 auto;
+      min-height: 0;
       max-height: calc((var(--todo-item-row-height, 68px) + 8px) * 5);
-      height: 100%;
       overflow-y: auto;
       padding-right: 10px;
       scrollbar-width: auto;
@@ -58,6 +67,9 @@ export class TodoList extends LitElement {
     }
   `;
 
+  /**
+   * Initializes empty list data.
+   */
   constructor() {
     super();
     this.todos = [];
@@ -65,6 +77,10 @@ export class TodoList extends LitElement {
     this.previousTodosLength = 0;
   }
 
+  /**
+   * Auto scrolls to the bottom when new todos are added.
+   * @param {Map<string, unknown>} changedProperties
+   */
   updated(changedProperties) {
     if (!changedProperties.has('todos')) {
       return;
@@ -88,13 +104,14 @@ export class TodoList extends LitElement {
     this.previousTodosLength = currentLength;
   }
 
+  /**
+   * @returns {import('lit').TemplateResult}
+   */
   render() {
     if (this.todos.length === 0) {
-      return html`
-        <div class="empty-state" aria-live="polite">
-          <p>No todos yet. Add one above!</p>
-        </div>
-      `;
+      return html`<p class="empty-state" aria-live="polite">
+        No todos yet. Add one above!
+      </p>`;
     }
 
     return html`

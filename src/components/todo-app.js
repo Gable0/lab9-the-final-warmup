@@ -64,30 +64,6 @@ export class TodoApp extends LitElement {
       flex-wrap: wrap;
     }
 
-    .tasks-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      flex: 1 1 auto;
-    }
-
-    .tasks-list-box {
-      flex: 1 1 auto;
-      border: 1px solid #e0e6ff;
-      border-radius: 12px;
-      background: #f9f9ff;
-      padding: 12px 0 12px 12px;
-      display: flex;
-      min-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
-      max-height: calc(var(--todo-item-row-height, 68px) * 5 + 24px);
-      overflow: hidden;
-    }
-
-    .tasks-list-box todo-list {
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-
     .stat-item {
       display: flex;
       flex-direction: column;
@@ -144,6 +120,9 @@ export class TodoApp extends LitElement {
     }
   `;
 
+  /**
+   * Creates a TodoApp.
+   */
   constructor() {
     super();
     this.storageService = new StorageService();
@@ -163,6 +142,9 @@ export class TodoApp extends LitElement {
     });
   }
 
+  /**
+   * Clean up subscriptions and timers when the element detaches.
+   */
   disconnectedCallback() {
     if (this.unsubscribe) {
       this.unsubscribe();
@@ -171,6 +153,9 @@ export class TodoApp extends LitElement {
     super.disconnectedCallback();
   }
 
+  /**
+   * Cache the container element and lock its height after first render.
+   */
   firstUpdated() {
     this.appContainer = this.renderRoot.querySelector('.app-container');
     if (!this.appContainer) {
@@ -189,6 +174,11 @@ export class TodoApp extends LitElement {
     });
   }
 
+  /**
+   * Requests confirmation from the user.
+   * @param {string} message
+   * @returns {boolean}
+   */
   requestConfirmation(message) {
     try {
       return this.confirmHandler(message);
@@ -198,6 +188,10 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * Handles the add-todo event from the form.
+   * @param {CustomEvent<{text: string}>} e
+   */
   handleAddTodo(e) {
     const text = e?.detail?.text;
     if (text) {
@@ -205,6 +199,10 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * Handles checkbox changes from todo items.
+   * @param {CustomEvent<{id: number}>} e
+   */
   handleToggleTodo(e) {
     const id = e?.detail?.id;
     if (typeof id !== 'number') {
@@ -224,6 +222,10 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * Handles delete button events from todo items.
+   * @param {CustomEvent<{id: number}>} e
+   */
   handleDeleteTodo(e) {
     const id = e?.detail?.id;
     if (typeof id !== 'number') {
@@ -239,6 +241,10 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * Handles save events from edited todo items.
+   * @param {CustomEvent<{id: number, text: string}>} e
+   */
   handleUpdateTodo(e) {
     const { id, text } = e?.detail ?? {};
     if (typeof id === 'number') {
@@ -246,6 +252,9 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * Clears the entire list after user confirmation.
+   */
   handleClearAll() {
     const hasTodos = this.todos.length > 0;
     const hasCompleted = this.model.completedCount > 0;
@@ -260,13 +269,16 @@ export class TodoApp extends LitElement {
     }
   }
 
+  /**
+   * @returns {import('lit').TemplateResult}
+   */
   render() {
     const activeTodos = this.model.activeCount;
     const completedTodos = this.model.completedCount;
 
     return html`
       <div class="app-container">
-        <div class="header">
+        <header class="header">
           <div class="heading-group">
             <h1>My Tasks:</h1>
             <p class="subtitle">Stay organized and productive</p>
@@ -277,42 +289,42 @@ export class TodoApp extends LitElement {
             ?disabled=${this.todos.length === 0 && completedTodos === 0}>
             Clear All Values
           </button>
-        </div>
+        </header>
 
-        <div class="stats">
-          <div class="stat-item">
-            <div class="stat-value">${activeTodos}</div>
-            <div class="stat-label">To&nbsp;Do</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-value">${completedTodos}</div>
-            <div class="stat-label">Completed</div>
-          </div>
-        </div>
+        <section class="stats" aria-label="Task statistics">
+          <article class="stat-item">
+            <p class="stat-value">${activeTodos}</p>
+            <p class="stat-label">To&nbsp;Do</p>
+          </article>
+          <article class="stat-item">
+            <p class="stat-value">${completedTodos}</p>
+            <p class="stat-label">Completed</p>
+          </article>
+        </section>
 
-        <div class="tasks-panel">
-          <todo-form
-            @add-todo=${this.handleAddTodo}>
-          </todo-form>
+        <todo-form
+          @add-todo=${this.handleAddTodo}>
+        </todo-form>
 
-          <div class="tasks-list-box">
-            <todo-list
-              .todos=${this.todos}
-              .pendingDeletionIds=${this.pendingDeletionIds}
-              @toggle-todo=${this.handleToggleTodo}
-              @delete-todo=${this.handleDeleteTodo}
-              @update-todo=${this.handleUpdateTodo}>
-            </todo-list>
-          </div>
-        </div>
+        <todo-list
+          .todos=${this.todos}
+          .pendingDeletionIds=${this.pendingDeletionIds}
+          @toggle-todo=${this.handleToggleTodo}
+          @delete-todo=${this.handleDeleteTodo}
+          @update-todo=${this.handleUpdateTodo}>
+        </todo-list>
 
-        <div class="footer">
-        Lab 9: The Final Battle!
-        </div>
+        <footer class="footer">
+          Lab 9: The Final Battle!
+        </footer>
       </div>
     `;
   }
 
+  /**
+   * Removes a completed todo after a delay.
+   * @param {number} id
+   */
   scheduleAutoClear(id) {
     this.cancelAutoClear(id);
     this.markPendingDeletion(id);
@@ -328,6 +340,10 @@ export class TodoApp extends LitElement {
     this.autoClearTimers.set(id, timerId);
   }
 
+  /**
+   * Cancels a pending auto-clear for a given todo.
+   * @param {number} id
+   */
   cancelAutoClear(id) {
     const timerId = this.autoClearTimers.get(id);
     if (timerId) {
@@ -337,18 +353,29 @@ export class TodoApp extends LitElement {
     this.unmarkPendingDeletion(id);
   }
 
+  /**
+   * Cancels all auto clear timers.
+   */
   cancelAllAutoClear() {
     this.autoClearTimers.forEach(timerId => clearTimeout(timerId));
     this.autoClearTimers.clear();
     this.pendingDeletionIds = new Set();
   }
 
+  /**
+   * Marks a todo as pending deletion so the UI can show a spinner.
+   * @param {number} id
+   */
   markPendingDeletion(id) {
     const next = new Set(this.pendingDeletionIds);
     next.add(id);
     this.pendingDeletionIds = next;
   }
 
+  /**
+   * Removes the pending deletion state from a todo.
+   * @param {number} id
+   */
   unmarkPendingDeletion(id) {
     if (!this.pendingDeletionIds.has(id)) {
       return;

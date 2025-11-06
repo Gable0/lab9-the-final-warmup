@@ -152,6 +152,9 @@ export class TodoItem extends LitElement {
     }
   `;
 
+  /**
+   * Sets default state for an item.
+   */
   constructor() {
     super();
     this.isEditing = false;
@@ -159,6 +162,9 @@ export class TodoItem extends LitElement {
     this.pendingDeletion = false;
   }
 
+  /**
+   * Emits toggle-todo for this todo.
+   */
   handleToggle() {
     this.dispatchEvent(new CustomEvent('toggle-todo', {
       detail: { id: this.todo.id },
@@ -167,6 +173,9 @@ export class TodoItem extends LitElement {
     }));
   }
 
+  /**
+   * Emits delete-todo for this todo.
+   */
   handleDelete() {
     this.dispatchEvent(new CustomEvent('delete-todo', {
       detail: { id: this.todo.id },
@@ -175,11 +184,17 @@ export class TodoItem extends LitElement {
     }));
   }
 
+  /**
+   * Enters edit mode with the current todo text.
+   */
   handleEdit() {
     this.isEditing = true;
     this.editValue = this.todo.text;
   }
 
+  /**
+   * Emits update-todo with the edited value when non-empty.
+   */
   handleSave() {
     if (this.editValue.trim()) {
       this.dispatchEvent(new CustomEvent('update-todo', {
@@ -191,15 +206,26 @@ export class TodoItem extends LitElement {
     }
   }
 
+  /**
+   * Leaves edit mode without saving changes.
+   */
   handleCancel() {
     this.isEditing = false;
     this.editValue = '';
   }
 
+  /**
+   * Tracks the value typed into the edit field.
+   * @param {InputEvent & { target: HTMLInputElement }} event
+   */
   handleEditInput(event) {
     this.editValue = event.target.value;
   }
 
+  /**
+   * Supports keyboard shortcuts while editing.
+   * @param {KeyboardEvent} e
+   */
   handleKeyDown(e) {
     if (e.key === 'Enter') {
       this.handleSave();
@@ -208,6 +234,9 @@ export class TodoItem extends LitElement {
     }
   }
 
+  /**
+   * @returns {import('lit').TemplateResult}
+   */
   render() {
     if (this.isEditing) {
       return html`

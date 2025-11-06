@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+
+import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+
+const ROOT = path.resolve(new URL('.', import.meta.url).pathname, '..');
+const SRC_DIR = path.join(ROOT, 'src');
+const DOCS_DIR = path.join(ROOT, 'docs');
+const OUTPUT = path.join(DOCS_DIR, 'api.md');
+
+const timestamp = new Date().toISOString();
+
+/**
+ * Recursively walks a directory to gather .js files.
+ * @param {string} directory
+ * @returns {string[]}
+ */
+function collectSourceFiles(directory) {
+  const entries = readdirSync(directory, { withFileTypes: true });
+  return entries.flatMap(entry => {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      return collectSourceFiles(fullPath);
+    }
+    if (entry.isFile() && entry.name.endsWith('.js')) {
+      return [fullPath];
+    }
+    return [];
+  });
+}
+
+/**
+ * Extracts JSDoc blocks and their following declaration line.
+ * @param {string} content
+ * @returns {{comment: string, declaration: string}[]}
+ */
+function extractDocs(content) {
+  const docs = [];
+  const regex = /\/\*\*([\s\S]*?)\*\/\s*([^\s].*)/g;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    const comment = match[1]
+      .split('\n')
+      .map(line => line.replace(/^\s*\* ?/, ''))
+      .join('\n')
+      .trim();
+    const declarationLine = match[2].split('\n')[0].trim();
+    docs.push({ comment, declaration: declarationLine });
+  }
+  return docs;
+}
+
+function ensureDocsDir() {
+  mkdirSync(DOCS_DIR, { recursive: true });
+}
+
+function buildDocument(fileDocs) {
+  const lines = [
+    '# API Documentation',
+    '',
+    `_Generated: ${timestamp}_`,
+    ''
+  ];
+
+  fileDocs.forEach(({ relativePath, docs }) => {
+    if (docs.length === 0) {
+      return;
+    }
+
+    lines.push(`## ${relativePath}`);
+    lines.push('');
+    docs.forEach(({ comment, declaration }) => {
+      lines.push(`### \`${declaration}\``);
+      lines.push('');
+      lines.push(comment);
+      lines.push('');
+    });
+  });
+
+  return `${lines.join('\n').trim()}\n`;
+}
+
+function main() {
+  const files = collectSourceFiles(SRC_DIR);
+  const documentation = files.map(file => {
+    const content = readFileSync(file, 'utf8');
+    const docs = extractDocs(content);
+    const relativePath = path.relative(ROOT, file);
+    return { relativePath, docs };
+  });
+
+  ensureDocsDir();
+  const markdown = buildDocument(documentation);
+  writeFileSync(OUTPUT, markdown, 'utf8');
+  // eslint-disable-next-line no-console
+  console.log(`Documentation generated at ${path.relative(ROOT, OUTPUT)}`);
+}
+
+main();

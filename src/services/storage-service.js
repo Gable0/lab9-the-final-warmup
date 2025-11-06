@@ -6,13 +6,20 @@ export class StorageService {
   #storage;
   #storageKey;
 
+  /**
+   * @param {string} [storageKey]
+   * @param {Storage|null} [storage]
+   */
   constructor(storageKey = 'todos', storage = getBrowserStorage()) {
     this.#storageKey = storageKey;
     this.#storage = storage;
   }
 
   /**
-   * Save data to localStorage.
+   * Saves data to localStorage using the service prefix.
+   * @param {string} key
+   * @param {unknown} data
+   * @returns {void}
    */
   save(key, data) {
     if (!this.#storage) {
@@ -27,7 +34,11 @@ export class StorageService {
   }
 
   /**
-   * Load data from localStorage.
+   * Loads JSON data from localStorage.
+   * @template T
+   * @param {string} key
+   * @param {T} [defaultValue]
+   * @returns {T}
    */
   load(key, defaultValue = null) {
     if (!this.#storage) {
@@ -44,7 +55,9 @@ export class StorageService {
   }
 
   /**
-   * Remove data from localStorage.
+   * Removes a single key from localStorage.
+   * @param {string} key
+   * @returns {void}
    */
   remove(key) {
     if (!this.#storage) {
@@ -59,7 +72,8 @@ export class StorageService {
   }
 
   /**
-   * Clear all data for this app.
+   * Removes all keys belonging to this app from storage.
+   * @returns {void}
    */
   clear() {
     if (!this.#storage) {
@@ -80,6 +94,10 @@ export class StorageService {
     }
   }
 
+  /**
+   * @param {string} keySuffix
+   * @returns {string}
+   */
   #buildKey(keySuffix) {
     return `${this.#storageKey}_${keySuffix}`;
   }

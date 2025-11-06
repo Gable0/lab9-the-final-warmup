@@ -8,6 +8,9 @@ export class TodoModel {
   #storage;
   #completedTotal;
 
+  /**
+   * @param {import('../services/storage-service.js').StorageService} storageService
+   */
   constructor(storageService) {
     this.#storage = storageService;
     const storedTodos = this.#storage.load('items', []);
@@ -23,8 +26,9 @@ export class TodoModel {
   }
 
   /**
-   * Subscribe to model changes.
-   * Returns an unsubscribe callback to remove the listener.
+   * Subscribe to model changes and get an unsubscribe callback.
+   * @param {() => void} listener
+   * @returns {() => void}
    */
   subscribe(listener) {
     this.#listeners.add(listener);
@@ -34,14 +38,17 @@ export class TodoModel {
   }
 
   /**
-   * Notify all subscribers of changes.
+   * Notifies all registered listeners.
+   * @returns {void}
    */
   notify() {
     this.#listeners.forEach(listener => listener());
   }
 
   /**
-   * Add a new todo.
+   * Adds a new todo when the text is non-empty.
+   * @param {string} text
+   * @returns {boolean}
    */
   addTodo(text) {
     const trimmed = typeof text === 'string' ? text.trim() : '';
@@ -63,7 +70,9 @@ export class TodoModel {
   }
 
   /**
-   * Toggle todo completion status.
+   * Toggles completion and tracks lifetime completed count.
+   * @param {number} id
+   * @returns {boolean}
    */
   toggleComplete(id) {
     let updated = false;
@@ -98,7 +107,9 @@ export class TodoModel {
   }
 
   /**
-   * Delete a todo.
+   * Deletes a todo by id.
+   * @param {number} id
+   * @returns {boolean}
    */
   deleteTodo(id) {
     const nextTodos = this.todos.filter(todo => todo.id !== id);
@@ -109,7 +120,10 @@ export class TodoModel {
   }
 
   /**
-   * Update todo text.
+   * Updates todo text when the trimmed text is non-empty.
+   * @param {number} id
+   * @param {string} newText
+   * @returns {boolean}
    */
   updateTodo(id, newText) {
     const trimmed = typeof newText === 'string' ? newText.trim() : '';
@@ -135,7 +149,8 @@ export class TodoModel {
   }
 
   /**
-   * Clear all completed todos.
+   * Removes only completed todos.
+   * @returns {boolean}
    */
   clearCompleted() {
     const nextTodos = this.todos.filter(todo => !todo.completed);
@@ -145,7 +160,8 @@ export class TodoModel {
   }
 
   /**
-   * Clear all todos and reset id counter.
+   * Clears every todo and resets counters.
+   * @returns {boolean}
    */
   clearAll() {
     if (this.todos.length === 0 && this.#nextId === 1) {
@@ -159,19 +175,25 @@ export class TodoModel {
   }
 
   /**
-   * Get count of active todos.
+   * Gets the count of active (incomplete) todos.
+   * @returns {number}
    */
   get activeCount() {
     return this.todos.reduce((count, todo) => (todo.completed ? count : count + 1), 0);
   }
 
   /**
-   * Get count of completed todos.
+   * Gets the lifetime completed count.
+   * @returns {number}
    */
   get completedCount() {
     return this.#completedTotal;
   }
 
+  /**
+   * @param {boolean} didChange
+   * @returns {boolean}
+   */
   #commit(didChange) {
     if (!didChange) {
       return false;
@@ -182,6 +204,10 @@ export class TodoModel {
     return true;
   }
 
+  /**
+   * Persists current state to storage.
+   * @returns {void}
+   */
   #persist() {
     this.#storage.save('items', this.todos);
     this.#storage.save('nextId', this.#nextId);

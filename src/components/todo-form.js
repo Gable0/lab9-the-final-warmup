@@ -11,7 +11,6 @@ export class TodoForm extends LitElement {
   static styles = css`
     :host {
       display: block;
-      margin-bottom: 20px;
     }
 
     form {
@@ -59,11 +58,18 @@ export class TodoForm extends LitElement {
     }
   `;
 
+  /**
+   * Creates an empty form.
+   */
   constructor() {
     super();
     this.inputValue = '';
   }
 
+  /**
+   * Dispatches an add-todo event with the trimmed input text.
+   * @param {SubmitEvent} e
+   */
   handleSubmit(e) {
     e.preventDefault();
     const text = this.inputValue.trim();
@@ -79,10 +85,17 @@ export class TodoForm extends LitElement {
     }
   }
 
+  /**
+   * Keeps the internal state in sync with the input value.
+   * @param {InputEvent & { target: HTMLInputElement }} e
+   */
   handleInput(e) {
     this.inputValue = e.target.value;
   }
 
+  /**
+   * @returns {import('lit').TemplateResult}
+   */
   render() {
     return html`
       <form @submit=${this.handleSubmit}>
