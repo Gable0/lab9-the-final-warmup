@@ -1,4 +1,5 @@
 # Task Manager – Lab 9 Warm-up
+## Netlify Link: https://gable0comp305lab9.netlify.app/
 
 This repository contains a Lit-based task manager used for Lab 9. The project has been reorganized to follow a more conventional Vite layout with clear separation between source code, documentation, and tests.
 
