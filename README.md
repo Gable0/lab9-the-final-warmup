@@ -58,7 +58,7 @@ If you fork this repository, update the link above to match your GitHub username
 
 ## Continuous Integration
 
-The workflow defined in `.github/workflows/ci.yml` runs on every push and pull request:
+The workflow defined in `.github/workflows/pipeline.yml` runs on every push and pull request:
 
 - Installs dependencies with `npm ci`
 - Executes linting, documentation generation, unit tests, and Playwright E2E tests
