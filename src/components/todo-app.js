@@ -4,6 +4,8 @@ import { StorageService } from '../services/storage-service.js';
 import './todo-form.js';
 import './todo-list.js';
 
+const AUTO_CLEAR_DELAY_MS = 500;
+
 /**
  * TodoApp - Main application component
  * Coordinates between Model and View components
@@ -179,7 +181,7 @@ export class TodoApp extends LitElement {
    * @param {string} message
    * @returns {boolean}
    */
-  requestConfirmation(message) {
+  confirmAction(message) {
     try {
       return this.confirmHandler(message);
     } catch (error) {
@@ -214,7 +216,7 @@ export class TodoApp extends LitElement {
       return;
     }
 
-    const todo = this.model.todos.find(item => item.id === id);
+    const todo = this.getTodoFromModel(id);
     if (todo?.completed) {
       this.scheduleAutoClear(id);
     } else {
@@ -232,10 +234,10 @@ export class TodoApp extends LitElement {
       return;
     }
 
-    const todo = this.todos.find(item => item.id === id);
+    const todo = this.getTodoById(id);
     const message = todo ? `Delete "${todo.text}"?` : 'Delete this todo?';
 
-    if (this.requestConfirmation(message)) {
+    if (this.confirmAction(message)) {
       this.cancelAutoClear(id);
       this.model.deleteTodo(id);
     }
@@ -263,7 +265,7 @@ export class TodoApp extends LitElement {
       return;
     }
 
-    if (this.requestConfirmation('Clear ALL todos? This cannot be undone.')) {
+    if (this.confirmAction('Clear ALL todos? This cannot be undone.')) {
       this.cancelAllAutoClear();
       this.model.clearAll();
     }
@@ -329,13 +331,13 @@ export class TodoApp extends LitElement {
     this.cancelAutoClear(id);
     this.markPendingDeletion(id);
     const timerId = setTimeout(() => {
-      const todo = this.model.todos.find(item => item.id === id);
+      const todo = this.getTodoFromModel(id);
       if (todo?.completed) {
         this.model.deleteTodo(id);
       }
       this.autoClearTimers.delete(id);
       this.unmarkPendingDeletion(id);
-    }, 500);
+    }, AUTO_CLEAR_DELAY_MS);
 
     this.autoClearTimers.set(id, timerId);
   }
@@ -370,6 +372,24 @@ export class TodoApp extends LitElement {
     const next = new Set(this.pendingDeletionIds);
     next.add(id);
     this.pendingDeletionIds = next;
+  }
+
+  /**
+   * Finds a todo in the current state by id.
+   * @param {number} id
+   * @returns {{ id: number, text: string, completed: boolean }|undefined}
+   */
+  getTodoById(id) {
+    return this.todos.find(item => item.id === id);
+  }
+
+  /**
+   * Finds a todo from the model by id.
+   * @param {number} id
+   * @returns {{ id: number, text: string, completed: boolean }|undefined}
+   */
+  getTodoFromModel(id) {
+    return this.model.todos.find(item => item.id === id);
   }
 
   /**

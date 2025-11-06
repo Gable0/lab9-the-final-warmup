@@ -21,7 +21,7 @@ Clean up subscriptions and timers when the element detaches.
 
 Cache the container element and lock its height after first render.
 
-### `requestConfirmation(message) {`
+### `confirmAction(message) {`
 
 Requests confirmation from the user.
 @param {string} message
@@ -73,6 +73,18 @@ Cancels all auto clear timers.
 
 Marks a todo as pending deletion so the UI can show a spinner.
 @param {number} id
+
+### `getTodoById(id) {`
+
+Finds a todo in the current state by id.
+@param {number} id
+@returns {{ id: number, text: string, completed: boolean }|undefined}
+
+### `getTodoFromModel(id) {`
+
+Finds a todo from the model by id.
+@param {number} id
+@returns {{ id: number, text: string, completed: boolean }|undefined}
 
 ### `unmarkPendingDeletion(id) {`
 

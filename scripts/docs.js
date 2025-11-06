@@ -2,8 +2,9 @@
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('.', import.meta.url).pathname, '..');
+const ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const SRC_DIR = path.join(ROOT, 'src');
 const DOCS_DIR = path.join(ROOT, 'docs');
 const OUTPUT = path.join(DOCS_DIR, 'api.md');

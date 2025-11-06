@@ -166,6 +166,10 @@ export class TodoItem extends LitElement {
    * Emits toggle-todo for this todo.
    */
   handleToggle() {
+    if (!this.todo) {
+      return;
+    }
+
     this.dispatchEvent(new CustomEvent('toggle-todo', {
       detail: { id: this.todo.id },
       bubbles: true,
@@ -177,6 +181,10 @@ export class TodoItem extends LitElement {
    * Emits delete-todo for this todo.
    */
   handleDelete() {
+    if (!this.todo) {
+      return;
+    }
+
     this.dispatchEvent(new CustomEvent('delete-todo', {
       detail: { id: this.todo.id },
       bubbles: true,
@@ -188,6 +196,10 @@ export class TodoItem extends LitElement {
    * Enters edit mode with the current todo text.
    */
   handleEdit() {
+    if (!this.todo) {
+      return;
+    }
+
     this.isEditing = true;
     this.editValue = this.todo.text;
   }
@@ -196,14 +208,20 @@ export class TodoItem extends LitElement {
    * Emits update-todo with the edited value when non-empty.
    */
   handleSave() {
-    if (this.editValue.trim()) {
-      this.dispatchEvent(new CustomEvent('update-todo', {
-        detail: { id: this.todo.id, text: this.editValue },
-        bubbles: true,
-        composed: true
-      }));
-      this.isEditing = false;
+    if (!this.todo) {
+      return;
     }
+
+    if (!this.editValue.trim()) {
+      return;
+    }
+
+    this.dispatchEvent(new CustomEvent('update-todo', {
+      detail: { id: this.todo.id, text: this.editValue },
+      bubbles: true,
+      composed: true
+    }));
+    this.isEditing = false;
   }
 
   /**
@@ -238,6 +256,10 @@ export class TodoItem extends LitElement {
    * @returns {import('lit').TemplateResult}
    */
   render() {
+    if (!this.todo) {
+      return html``;
+    }
+
     if (this.isEditing) {
       return html`
         <div class="todo-item">
