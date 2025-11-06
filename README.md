@@ -19,6 +19,14 @@ Additional commands:
 - `npm run test:all` – run both unit and E2E suites
 - `npm run docs:generate` – produce API documentation from JSDoc comments
 
+## Deployment
+
+The automated GitHub Actions pipeline builds and publishes the `dist/` output to GitHub Pages on every push to `main`. Once the action completes, the live app is available here:
+
+- https://gablekrich.github.io/lab9-the-final-warmup/
+
+If you fork this repository, update the link above to match your GitHub username.
+
 ## Project Structure
 
 ```text
@@ -43,10 +51,23 @@ Additional commands:
 └── README.md
 ```
 
+## Project Tracking
+
+- Issues: https://github.com/gablekrich/lab9-the-final-warmup/issues
+- Activity Log: `git log --oneline --decorate --graph`
+
+## Continuous Integration
+
+The workflow defined in `.github/workflows/ci.yml` runs on every push and pull request:
+
+- Installs dependencies with `npm ci`
+- Executes linting, documentation generation, unit tests, and Playwright E2E tests
+- Builds the production bundle and, on pushes to `main`, deploys `dist/` to GitHub Pages
+
 ## Documentation
 
 - `docs/lab-guide.md` – the original lab brief
-- `docs/adrs` – architecture decision records; see `0001-choose-lit.md`
+- `docs/adrs` – architecture decision records; see `lit-decision.md`
 - `docs/api.md` – generated API reference derived from JSDoc across `src/`
 
 Regenerate the API reference any time you update component JSDoc by running `npm run docs:generate`.

@@ -57,6 +57,3 @@ The least prescriptive of all the tasks this effort and outcome based.  You get 
 ## Submission
 
 Submit your GitHub repository URL that demonstrates with a README that clearly points to your deployed TODO.
-
-
-Good luck! Remember to focus on process more than code. The lab is also intentionally vague as your final warm-up before we wrestle with **REAL** uncertainty!  You are free to ask me for advice about ideas you have, things you might do to show ownership, etc. Who knows that might be an actual learning outcome.
